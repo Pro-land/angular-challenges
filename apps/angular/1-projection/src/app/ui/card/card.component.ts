@@ -1,9 +1,14 @@
-import { NgOptimizedImage } from '@angular/common';
-import { Component, inject, input } from '@angular/core';
-import { randStudent, randTeacher } from '../../data-access/fake-http.service';
-import { StudentStore } from '../../data-access/student.store';
-import { TeacherStore } from '../../data-access/teacher.store';
+import { NgOptimizedImage, NgTemplateOutlet } from '@angular/common';
+import {
+  Component,
+  ContentChild,
+  EventEmitter,
+  input,
+  Output,
+  TemplateRef,
+} from '@angular/core';
 import { CardType } from '../../model/card.model';
+import { ListItemRefDirective } from '../list-item/list-item-ref.directive';
 import { ListItemComponent } from '../list-item/list-item.component';
 
 @Component({
@@ -12,22 +17,16 @@ import { ListItemComponent } from '../list-item/list-item.component';
     <div
       class="flex w-fit flex-col gap-3 rounded-md border-2 border-black p-4"
       [class]="customClass()">
-      @if (type() === CardType.TEACHER) {
-        <img ngSrc="assets/img/teacher.png" width="200" height="200" />
-      }
-      @if (type() === CardType.STUDENT) {
-        <img ngSrc="assets/img/student.webp" width="200" height="200" />
-      }
-
+      <img [ngSrc]="image() || ''" width="200" height="200" />
       <section>
+        <
         @for (item of list(); track item) {
-          <app-list-item
-            [name]="item.firstName"
-            [id]="item.id"
-            [type]="type()"></app-list-item>
+          <ng-template
+            [ngTemplateOutlet]="listItemTemplate"
+            [ngTemplateOutletContext]="{ $implicit: item }"></ng-template>
         }
+        >
       </section>
-
       <button
         class="rounded-sm border border-blue-500 bg-blue-300 p-2"
         (click)="addNewItem()">
@@ -35,24 +34,23 @@ import { ListItemComponent } from '../list-item/list-item.component';
       </button>
     </div>
   `,
-  imports: [ListItemComponent, NgOptimizedImage],
+  imports: [ListItemComponent, NgOptimizedImage, NgTemplateOutlet],
+  standalone: true,
 })
-export class CardComponent {
-  private teacherStore = inject(TeacherStore);
-  private studentStore = inject(StudentStore);
-
+export class CardComponent<T extends { id: number }> {
   readonly list = input<any[] | null>(null);
   readonly type = input.required<CardType>();
+  readonly image = input<string>();
   readonly customClass = input('');
+  readonly nameToShow = input<string>();
 
-  CardType = CardType;
+  @Output() addNewItemEvent = new EventEmitter<void>();
+  @Output() removeItemEvent = new EventEmitter<number>();
+
+  @ContentChild(ListItemRefDirective, { read: TemplateRef })
+  listItemTemplate!: TemplateRef<{ $implicit: T }>;
 
   addNewItem() {
-    const type = this.type();
-    if (type === CardType.TEACHER) {
-      this.teacherStore.addOne(randTeacher());
-    } else if (type === CardType.STUDENT) {
-      this.studentStore.addOne(randStudent());
-    }
+    this.addNewItemEvent.emit();
   }
 }

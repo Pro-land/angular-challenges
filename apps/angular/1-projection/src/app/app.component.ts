@@ -13,5 +13,6 @@ import { TeacherCardComponent } from './component/teacher-card/teacher-card.comp
     </div>
   `,
   imports: [TeacherCardComponent, StudentCardComponent, CityCardComponent],
+  standalone: true,
 })
 export class AppComponent {}
